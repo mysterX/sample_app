@@ -3,18 +3,18 @@
 
 <div class="row">
   <div class="span6 offset3">
-    <%= form_for(:session, url: sessions_path) do |f| %>
+    <%= form_tag(sessions_path) do %>
 
-      <%= f.label :email %>
-      <%= f.text_field :email %>
+      <%= label_tag :email %>
+      <%= text_field_tag :email, params[:email] %>
 
-      <%= f.label :password %>
-      <%= f.password_field :password %>
+      <%= label_tag :password %>
+      <%= password_field_tag :password %>
 
       <%-# This next line should be unnecessary, but seems to be needed for formatting -%>
       <p>
 
-      <%= f.submit "Sign in", class: "btn bth-large btn-primary" %>
+      <%= submit_tag "Sign in", class: "btn bth-large btn-primary" %>
     <% end %>
 
     <p>New user? <%= link_to "Sign up now!", signup_path %></p>

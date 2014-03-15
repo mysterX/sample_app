@@ -14,6 +14,13 @@ def sign_in(user, options={})
   end
 end
 
+def fill_in_user(uName, uEmail, uPwd, uPwdConf)
+  fill_in "Name",             with: uName
+  fill_in "Email",            with: uEmail
+  fill_in "Password",         with: uPwd
+  fill_in "Confirm Password", with: uPwdConf
+end
+
 RSpec::Matchers.define :have_error_message do |message|
   match do |page|
     expect(page).to have_selector('div.alert.alert-error', text: message)

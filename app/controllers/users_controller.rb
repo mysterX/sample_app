@@ -1,7 +1,9 @@
 class UsersController < ApplicationController
-  before_action :signed_in_user, only: [:index, :edit, :update, :destroy]
-  before_action :correct_user,   only: [:edit, :update]
-  before_action :admin_user,     only: :destroy
+  before_action :signed_in_user,       only: [:index, :edit, :update, :destroy]
+  before_action :correct_user,         only: [:edit, :update]
+  before_action :admin_user,           only: :destroy
+  before_action :no_user,              only: [:new, :create]
+  before_action :dont_destroy_self,    only: :destroy
 
   def index
     @users = User.paginate(page: params[:page])
@@ -30,7 +32,10 @@ class UsersController < ApplicationController
   end
 
   def update
-    if @user.update_attributes(user_params)
+    if user_params.include?(:admin)
+      flash.now[:error] = "You may not edit the admin flag for a user"
+      render 'edit'
+    elsif @user.update_attributes(user_params)
       flash[:success] = "Profile updated"
       redirect_to @user
     else
@@ -47,7 +52,8 @@ class UsersController < ApplicationController
   private
 
   def user_params
-    params.require(:user).permit(:name, :email, :password, :password_confirmation)
+    params.require(:user).permit(:name, :email, :password, :password_confirmation,
+                                 :admin)
   end
 
   # Before filters
@@ -66,5 +72,16 @@ class UsersController < ApplicationController
 
   def admin_user
     redirect_to(root_url) unless current_user.admin?
+  end
+
+  def no_user
+    if signed_in?
+      redirect_to(root_url, notice: "Already logged in")
+    end
+  end
+
+  def dont_destroy_self
+    @user = User.find(params[:id])
+    redirect_to(root_url) if current_user?(@user)
   end
 end

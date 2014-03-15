@@ -90,22 +90,11 @@ describe "User pages" do
 
     describe "with valid information" do
       before do
-        fill_in "Name",         with: "Example User"
-        fill_in "Email",        with: "user@example.com"
-        fill_in "Password",     with: "foobar"
-        fill_in "Confirmation", with: "foobar"
+        fill_in_user "Example User", "user@example.com", "foobar", "foobar"
       end
 
       it "should create a user" do
         expect { click_button submit }.to change(User, :count).by(1)
-      end
-
-      describe "after saving the user" do
-        before { click_button submit }
-        let(:user) { User.find_by(email: "user@example.com") }
-
-        it { should have_title(user.name) }
-        it { should have_selector('div.alert.alert-success', text: 'Welcome') }
       end
 
       describe "after saving the user" do
@@ -142,10 +131,7 @@ describe "User pages" do
       let(:new_name)  { "New Name" }
       let(:new_email) { "new@example.com" }
       before do
-        fill_in "Name",             with: new_name
-        fill_in "Email",            with: new_email
-        fill_in "Password",         with: user.password
-        fill_in "Confirm Password", with: user.password
+        fill_in_user new_name, new_email, user.password, user.password
         click_button "Save changes"
 
         it { should have_title(new_name) }
@@ -154,6 +140,18 @@ describe "User pages" do
         specify { expect(user.reload.name).to eq new_name }
         specify { expect(user.reload.email).to eq new_email }
       end
+    end
+
+    describe "forbidden attributes" do
+      let(:params) do
+        { user: { admin: true, password: user.password,
+            password_confirmation: user.password } }
+      end
+      before do
+        sign_in user, no_capybara: true
+        patch user_path(user), params
+      end
+      specify { expect(user.reload).not_to be_admin }
     end
   end
 end

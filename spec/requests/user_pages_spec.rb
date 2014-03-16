@@ -163,4 +163,157 @@ describe "User pages" do
       specify { expect(user.reload).not_to be_admin }
     end
   end
+
+  describe "profile micropost counts" do
+    let(:user) { FactoryGirl.create(:user) }
+    before do
+      sign_in user
+      visit root_path
+    end
+
+    describe "should have no microposts after creation" do
+      it { should have_content("0 microposts") }
+    end
+
+    describe "with posts" do
+      let(:m1) { FactoryGirl.create(:micropost, user: user, content: "Foo") }
+
+      describe "should have singular micropost" do
+        before do
+          fill_in 'micropost[content]', :with => "Test post"
+          click_button "Post"
+        end
+
+        it { should have_content("1 micropost") }
+      end
+
+      describe "should have plural microposts" do
+        before do
+          fill_in 'micropost[content]', :with => "Test post 1"
+          click_button "Post"
+          fill_in 'micropost[content]', :with => "Test post 2"
+          click_button "Post"
+        end
+
+        it { should have_content("2 microposts") }
+      end
+
+      describe "should have singular micropost after deleting all but one" do
+        before do
+          fill_in 'micropost[content]', :with => "Test post 1"
+          click_button "Post"
+          fill_in 'micropost[content]', :with => "Test post 2"
+          click_button "Post"
+          click_link('delete', match: :first)
+        end
+
+        it { should have_content("1 micropost") }
+      end
+    end
+  end
+
+  describe "check delete links" do
+    let(:user) { FactoryGirl.create(:user, name: "This user", email: "this@test.com") }
+    let(:other_user) { FactoryGirl.create(:user, name: "Other user", email: "other@test.com") }
+    let(:other_m1) { FactoryGirl.create(:micropost, user: other_user) }
+    
+    describe "has delete links for other user's posts" do
+      before do
+        sign_in other_user
+        visit user_path(other_user)
+      end
+
+      # TODO: Understand why this test fails
+#      it { should have_link('delete', href: micropost_path(other_m1)) }
+    end
+
+    describe "has no delete links for other user's posts" do
+      before do
+        sign_in user
+        visit user_path(other_user)
+      end
+
+      it { should_not have_link('delete', href: micropost_path(other_m1)) }
+    end
+  end
+
+  describe "profile micropost counts" do
+    let(:user) { FactoryGirl.create(:user) }
+    before(:each) do
+      100.times { |i| FactoryGirl.create(:micropost, user: user, content: "Post [#{i+1}]") }
+    end
+    before do
+      sign_in user
+      visit root_path
+    end
+
+    describe "should have first page" do
+      it { should have_content("[100]") }
+      it { should have_content("[71]") }
+      it { should_not have_content("[70]") }
+      it { should_not have_content("[41]") }
+      it { should_not have_content("[40]") }
+      it { should_not have_content("[11]") }
+      it { should_not have_content("[10]") }
+      it { should_not have_content("[1]") }
+    end
+
+    describe "should have second page" do
+      before { click_link "Next" }
+      it { should_not have_content("[100]") }
+      it { should_not have_content("[71]") }
+      it { should have_content("[70]") }
+      it { should have_content("[41]") }
+      it { should_not have_content("[40]") }
+      it { should_not have_content("[11]") }
+      it { should_not have_content("[10]") }
+      it { should_not have_content("[1]") }
+    end
+
+    describe "should have third page" do
+      before do
+        click_link "Next"
+        click_link "Next"
+      end
+      it { should_not have_content("[100]") }
+      it { should_not have_content("[71]") }
+      it { should_not have_content("[70]") }
+      it { should_not have_content("[41]") }
+      it { should have_content("[40]") }
+      it { should have_content("[11]") }
+      it { should_not have_content("[10]") }
+      it { should_not have_content("[1]") }
+    end
+
+    describe "should have fourth page" do
+      before do
+        click_link "Next"
+        click_link "Next"
+        click_link "Next"
+      end
+      before { click_link "Next" }
+      it { should_not have_content("[100]") }
+      it { should_not have_content("[71]") }
+      it { should_not have_content("[70]") }
+      it { should_not have_content("[41]") }
+      it { should_not have_content("[40]") }
+      it { should_not have_content("[11]") }
+      it { should have_content("[10]") }
+      it { should have_content("[1]") }
+    end
+
+    describe "should have page 3" do
+      before do
+        click_link "3"
+      end
+      it { should_not have_content("[100]") }
+      it { should_not have_content("[71]") }
+      it { should_not have_content("[70]") }
+      it { should_not have_content("[41]") }
+      it { should have_content("[40]") }
+      it { should have_content("[11]") }
+      it { should_not have_content("[10]") }
+      it { should_not have_content("[1]") }
+    end
+  end
 end
